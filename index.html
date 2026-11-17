@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Avvisi Pazienti</title>
+<meta name="theme-color" content="#1e6b5c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Avvisi">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<style>
+  :root{
+    --bg:#f6f4ef; --card:#fff; --ink:#1f2a2e; --muted:#5f6b70; --line:#e2ded5;
+    --accent:#1e6b5c; --accent-soft:#e3f0ec; --warn:#b5462f; --warn-soft:#f8e6e1;
+    --ok:#2f7a3c; --wa:#1f9d55; --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  header{background:var(--accent);color:#fff;padding:calc(18px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 0 calc(16px + env(safe-area-inset-left))}
+  main{padding-bottom:calc(24px + env(safe-area-inset-bottom))!important}
+  .install{background:#fff7e0;border:1px solid #f0d58a;border-radius:var(--radius);padding:12px 14px;margin:0 0 14px;font-size:.95rem}
+  .install ol{margin:6px 0 0;padding-left:22px}
+  .install li{margin:3px 0}
+  header h1{margin:0;font-size:1.3rem;display:flex;gap:10px;align-items:center}
+  header p{margin:4px 0 12px;opacity:.85;font-size:.92rem}
+  .tabs{display:flex;gap:6px}
+  .tab{flex:1;border:0;background:rgba(255,255,255,.15);color:#fff;font:inherit;font-weight:600;padding:12px 8px;border-radius:12px 12px 0 0;cursor:pointer}
+  .tab[aria-selected="true"]{background:var(--bg);color:var(--accent)}
+  main{max-width:760px;margin:0 auto;padding:16px}
+  .hint{background:var(--accent-soft);border-radius:var(--radius);padding:12px 14px;margin:0 0 14px;font-size:.95rem}
+  .hint b{color:var(--accent)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:12px}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .grow{flex:1;min-width:0}
+  label{display:block;font-weight:600;font-size:.9rem;margin:10px 0 4px}
+  input,select,textarea{font:inherit;color:inherit;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+  textarea{min-height:130px;resize:vertical}
+  button,.btn{font:inherit;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--ink);padding:10px 14px;border-radius:10px;display:inline-flex;gap:8px;align-items:center;justify-content:center;text-decoration:none}
+  .btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  .btn-big{width:100%;padding:16px;font-size:1.08rem;border-radius:var(--radius)}
+  .btn-wa{background:var(--wa);border-color:var(--wa);color:#fff}
+  .btn-danger{color:var(--warn);border-color:#e7c3b9}
+  .btn-danger.armed{background:var(--warn);color:#fff;border-color:var(--warn)}
+  .btn-small{padding:6px 10px;font-size:.9rem}
+  .muted{color:var(--muted);font-size:.9rem}
+  .pz-name{font-weight:700;font-size:1.05rem}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .chip{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:3px 10px;font-size:.85rem;white-space:nowrap}
+  .chip.once{background:#fdf1d8;color:#8a5a00}
+  .appt-row{display:grid;grid-template-columns:1.2fr 1.3fr .9fr auto;gap:8px;margin-bottom:8px;align-items:center}
+  @media (max-width:520px){.appt-row{grid-template-columns:1fr 1fr}.appt-row .del{grid-column:span 2}}
+  .empty{text-align:center;padding:30px 10px;color:var(--muted)}
+  .empty .big{font-size:2.6rem}
+  .status{font-size:.82rem;opacity:.9;margin-top:2px}
+  .who{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}
+  .who:first-child{border-top:0}
+  .who input[type=checkbox]{width:22px;height:22px;margin-top:3px;flex:none}
+  .sent{color:var(--ok);font-weight:600;font-size:.88rem}
+  .preview{background:#f3f7f6;border-left:4px solid var(--accent);padding:10px 12px;border-radius:8px;white-space:pre-wrap;font-size:.94rem;margin-top:8px}
+  .ph{border:1px dashed var(--accent);background:#fff;color:var(--accent);border-radius:999px;padding:4px 10px;font-size:.85rem}
+  .toggle{width:100%;justify-content:flex-start;text-align:left}
+  .toggle small{display:block;color:var(--muted);font-weight:400}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .step{display:flex;gap:10px;align-items:center;font-weight:700;margin:4px 0 8px}
+  .step .n{background:var(--accent);color:#fff;border-radius:50%;width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;font-size:.9rem;flex:none}
+  .fallback{margin-top:10px;font-size:.9rem}
+  .hidden{display:none!important}
+  .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:.92rem;opacity:0;transition:opacity .2s;pointer-events:none}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+<header>
+  <h1>📒 Agenda pazienti e avvisi</h1>
+  <p>Avvisa i pazienti di un'assenza o delle ferie senza telefonare a uno a uno.</p>
+  <div class="status" id="saveStatus">⏳ Caricamento dei dati…</div>
+  <div class="tabs" role="tablist" style="margin-top:10px">
+    <button class="tab" role="tab" aria-selected="true" data-tab="pazienti">👥 1 · Pazienti</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="avvisa">📣 2 · Avvisa</button>
+  </div>
+</header>
+
+<main>
+  <!-- ============ PAZIENTI ============ -->
+  <section id="tab-pazienti">
+    <div class="install hidden" id="installBox">
+      <b>📲 Installa l'app sull'iPhone</b> (serve una volta sola, con Safari):
+      <ol>
+        <li>Tocca il tasto <b>Condividi</b> ⬆️ in basso, al centro della barra di Safari.</li>
+        <li>Scorri e tocca <b>«Aggiungi alla schermata Home»</b> ➕.</li>
+        <li>Tocca <b>«Aggiungi»</b>. Troverai l'icona 📒 «Avvisi» tra le tue app.</li>
+      </ol>
+      <div class="muted" style="margin-top:6px">Poi apri sempre l'app dall'icona: i pazienti che inserisci restano salvati lì.</div>
+    </div>
+    <div class="hint">👋 <b>Come si usa:</b> per prima cosa scrivi qui i pazienti, con il loro cellulare e gli orari in cui vengono. Poi apri <b>«2 · Avvisa»</b>, scegli il giorno o il periodo in cui sarai assente e l'app ti mostra chi avvisare.</div>
+
+    <div class="row" style="margin-bottom:12px">
+      <input class="grow" id="search" type="search" placeholder="🔍 Cerca un paziente per nome">
+      <button class="btn-primary" id="btnAdd">➕ Nuovo paziente</button>
+    </div>
+
+    <div id="editor" class="card hidden">
+      <div class="step"><span class="n">✎</span><span id="editorTitle">Nuovo paziente</span></div>
+      <label for="fNome">👤 Nome e cognome</label>
+      <input id="fNome" autocomplete="off" placeholder="Es. Maria Rossi">
+      <label for="fTel">📱 Cellulare</label>
+      <input id="fTel" type="tel" inputmode="tel" autocomplete="off" placeholder="Es. 333 123 4567">
+      <div class="muted">Se non scrivi il prefisso, l'app aggiunge +39 (Italia).</div>
+      <label>📅 Appuntamenti</label>
+      <div class="muted" style="margin-bottom:8px">«Ogni settimana» vuol dire che il paziente viene sempre lo stesso giorno. «Una volta sola» vuol dire che viene solo in una data precisa.</div>
+      <div id="apptList"></div>
+      <button class="btn-small" id="btnAddAppt">➕ Aggiungi un appuntamento</button>
+      <label for="fNote">🗒️ Note (facoltative)</label>
+      <input id="fNote" autocomplete="off" placeholder="Es. preferisce WhatsApp">
+      <div class="row" style="margin-top:14px">
+        <button class="btn-primary grow" id="btnSave">💾 Salva paziente</button>
+        <button id="btnCancel">Annulla</button>
+      </div>
+    </div>
+
+    <div id="pzList"></div>
+
+    <div class="card" style="margin-top:18px">
+      <div class="step"><span class="n">💾</span>Copia di sicurezza</div>
+      <div class="muted">I pazienti sono salvati <b>solo su questo iPhone</b>, non su internet. Se perdi o cambi il telefono, li ritrovi solo se hai fatto una copia. Ogni tanto tocca «Salva una copia» e mettila in iCloud Drive, in File o mandala a te stesso per email.</div>
+      <div class="muted" id="lastBackup" style="margin-top:6px"></div>
+      <div class="row" style="margin-top:10px">
+        <button class="grow" id="btnExport">📤 Salva una copia</button>
+        <button class="grow" id="btnImport">📥 Ripristina da una copia</button>
+        <input type="file" id="fileImport" accept=".json,application/json" class="hidden">
+      </div>
+      <div id="importConfirm" class="hidden" style="margin-top:10px">
+        <div class="muted" id="importInfo"></div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn-primary grow" id="btnImportOk">✅ Sì, sostituisci l'elenco attuale</button>
+          <button id="btnImportNo">Annulla</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ AVVISA ============ -->
+  <section id="tab-avvisa" class="hidden">
+    <div class="hint">📣 <b>Tre passi:</b> scegli le date in cui sarai assente, controlla il messaggio, poi premi il pulsante verde. Ogni tocco apre il messaggio già pronto per il paziente successivo: tu devi solo premere «Invia» nell'app dei messaggi.</div>
+
+    <div class="card">
+      <div class="step"><span class="n">1</span>Quando sarai assente?</div>
+      <div class="two">
+        <div><label for="dDal">📅 Dal giorno</label><input id="dDal" type="date"></div>
+        <div><label for="dAl">📅 Al giorno</label><input id="dAl" type="date"></div>
+      </div>
+      <div class="muted" style="margin-top:6px">Per un giorno solo, metti la stessa data nei due campi.</div>
+    </div>
+
+    <div class="card">
+      <div class="step"><span class="n">2</span>Il messaggio</div>
+      <label for="motivo">❓ Motivo</label>
+      <select id="motivo">
+        <option value="assenza">🤒 Assenza improvvisa</option>
+        <option value="ferie">🏖️ Ferie / chiusura</option>
+        <option value="spostamento">🔁 Cambio di orario (scrivo io il nuovo orario)</option>
+        <option value="libero">✍️ Messaggio libero</option>
+      </select>
+      <label for="testo">✉️ Testo del messaggio (puoi modificarlo)</label>
+      <textarea id="testo"></textarea>
+      <div class="muted" style="margin:6px 0">Le parole tra parentesi graffe vengono sostituite in automatico per ogni paziente. Tocca una parola per inserirla nel testo:</div>
+      <div class="chips">
+        <button class="ph" data-ph="{nome}" title="Il nome del paziente">{nome} = nome</button>
+        <button class="ph" data-ph="{appuntamenti}" title="Gli appuntamenti annullati, con giorno e ora">{appuntamenti} = giorno e ora</button>
+        <button class="ph" data-ph="{periodo}" title="Le date di assenza">{periodo} = date di assenza</button>
+      </div>
+      <label for="firma">🖋️ Firma in fondo al messaggio</label>
+      <input id="firma" placeholder="Es. Dott.ssa Bianchi">
+    </div>
+
+    <div class="card">
+      <div class="step"><span class="n">3</span>Chi avvisare</div>
+      <button class="toggle" id="btnCanale"></button>
+      <div id="whoList" style="margin-top:8px"></div>
+      <div id="sendBox" class="hidden" style="margin-top:12px">
+        <a class="btn btn-big btn-wa" id="btnSend" target="_blank" rel="noopener"></a>
+        <div class="muted" id="sendHelp" style="margin-top:6px"></div>
+        <div class="preview" id="curPreview"></div>
+        <div class="fallback">
+          Se il pulsante non apre i messaggi, copia il testo e incollalo a mano:
+          <div class="row" style="margin-top:6px">
+            <button class="btn-small" id="btnCopy">📋 Copia il messaggio</button>
+            <span class="muted" id="curNumber"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  // ---------- stato ----------
+  const GIORNI = ["domenica","lunedì","martedì","mercoledì","giovedì","venerdì","sabato"];
+  const MESI = ["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"];
+  const MODELLI = {
+    assenza: "Gentile {nome}, per un imprevisto devo annullare {appuntamenti}. La ricontatterò al più presto per fissare un nuovo appuntamento. Mi scuso per il disagio.",
+    ferie: "Gentile {nome}, lo studio resterà chiuso per ferie {periodo}, quindi {appuntamenti} non si terrà. La ricontatterò alla riapertura per confermare il prossimo incontro. Grazie per la comprensione.",
+    spostamento: "Gentile {nome}, devo spostare {appuntamenti}. Il nuovo orario è: ______. Mi conferma se le va bene? Grazie.",
+    libero: "Gentile {nome}, "
+  };
+  const LS_KEY = "agendaAvvisi.v1";
+  const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  let state = { pazienti: [], firma: "", canale: "whatsapp", testi: {}, ultimoBackup: "" };
+  let editingId = null, sentIds = new Set(), unselected = new Set();
+
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const uid = () => Math.random().toString(36).slice(2,10) + Date.now().toString(36);
+
+  function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),2200); }
+  function setStatus(msg){ $("saveStatus").textContent = msg; }
+
+  // ---------- salvataggio (solo su questo telefono) ----------
+  function readLocal(){ try{ const r = localStorage.getItem(LS_KEY); return r ? JSON.parse(r) : null; }catch(e){ return null; } }
+  function writeLocal(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); return true; }catch(e){ return false; } }
+  function normalize(s){
+    return { pazienti: Array.isArray(s?.pazienti) ? s.pazienti : [], firma: s?.firma || "", canale: s?.canale === "sms" ? "sms" : "whatsapp", testi: (s && typeof s.testi === "object" && s.testi) || {}, ultimoBackup: s?.ultimoBackup || "" };
+  }
+  function save(){
+    if(writeLocal()) setStatus("📱 Salvato su questo iPhone");
+    else setStatus("⚠️ Non riesco a salvare: fai subito una copia di sicurezza");
+  }
+  function renderBackup(){
+    const n = state.pazienti.length;
+    if(!state.ultimoBackup){ $("lastBackup").textContent = n ? "⚠️ Non hai ancora fatto nessuna copia." : ""; return; }
+    const d = new Date(state.ultimoBackup), giorni = Math.floor((Date.now() - d) / 86400000);
+    $("lastBackup").textContent = "Ultima copia: " + d.toLocaleDateString("it-IT") + (giorni > 30 ? " — ⚠️ è passato più di un mese, conviene farne una nuova." : "");
+  }
+  $("btnExport").addEventListener("click", async () => {
+    const nome = "avvisi-pazienti-" + ymd(new Date()) + ".json";
+    const dati = JSON.stringify({ app: "avvisi-pazienti", versione: 1, salvato: new Date().toISOString(), ...state, ultimoBackup: undefined }, null, 2);
+    const file = new File([dati], nome, { type: "application/json" });
+    let ok = false;
+    try{
+      if(navigator.canShare && navigator.canShare({ files: [file] })){ await navigator.share({ files: [file], title: "Copia Avvisi Pazienti" }); ok = true; }
+    }catch(e){ if(e && e.name === "AbortError"){ toast("Copia annullata"); return; } }
+    if(!ok){
+      const url = URL.createObjectURL(file), a = document.createElement("a");
+      a.href = url; a.download = nome; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000); ok = true;
+    }
+    if(ok){ state.ultimoBackup = new Date().toISOString(); save(); renderBackup(); toast("💾 Copia pronta: salvala in File o iCloud"); }
+  });
+  let importData = null;
+  $("btnImport").addEventListener("click", () => $("fileImport").click());
+  $("fileImport").addEventListener("change", async e => {
+    const f = e.target.files && e.target.files[0]; e.target.value = "";
+    if(!f) return;
+    try{
+      const d = JSON.parse(await f.text());
+      if(!d || !Array.isArray(d.pazienti)) throw new Error("formato");
+      importData = d;
+      $("importInfo").textContent = "Questa copia contiene " + d.pazienti.length + " pazienti" + (d.salvato ? " (salvata il " + new Date(d.salvato).toLocaleDateString("it-IT") + ")" : "") + ". Se continui, l'elenco attuale (" + state.pazienti.length + " pazienti) viene sostituito.";
+      $("importConfirm").classList.remove("hidden");
+    }catch(err){ toast("Questo file non è una copia di Avvisi Pazienti"); }
+  });
+  $("btnImportNo").addEventListener("click", () => { importData = null; $("importConfirm").classList.add("hidden"); });
+  $("btnImportOk").addEventListener("click", () => {
+    if(!importData) return;
+    const keep = state.ultimoBackup;
+    state = normalize(importData); state.ultimoBackup = keep;
+    importData = null; $("importConfirm").classList.add("hidden");
+    save(); renderAll(); toast("✅ Elenco ripristinato");
+  });
+
+  // ---------- telefoni ----------
+  function phoneIntl(raw){
+    let p = String(raw||"").replace(/[^\d+]/g,"");
+    if(p.startsWith("00")) p = "+" + p.slice(2);
+    if(!p.startsWith("+")) p = "+39" + p.replace(/^0039/,"");
+    return p;
+  }
+  function phonePretty(raw){ const p = phoneIntl(raw); return p.startsWith("+39") ? "+39 " + p.slice(3).replace(/(\d{3})(\d{3})(\d+)/,"$1 $2 $3") : p; }
+
+  // ---------- date ----------
+  function ymd(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+  function parseYmd(s){ const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); }
+  function dataLunga(d){ return GIORNI[d.getDay()] + " " + d.getDate() + " " + MESI[d.getMonth()]; }
+  function apptLabel(a){
+    if(a.tipo === "once"){ return a.data ? "📌 " + dataLunga(parseYmd(a.data)) + (a.ora ? " ore " + a.ora : "") : "📌 data da scegliere"; }
+    return "🔁 ogni " + GIORNI[a.giorno] + (a.ora ? " ore " + a.ora : "");
+  }
+
+  // ---------- TAB ----------
+  document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", x === b ? "true" : "false"));
+    $("tab-pazienti").classList.toggle("hidden", b.dataset.tab !== "pazienti");
+    $("tab-avvisa").classList.toggle("hidden", b.dataset.tab !== "avvisa");
+    if(b.dataset.tab === "avvisa") renderAvvisa();
+  }));
+
+  // ---------- PAZIENTI ----------
+  function renderPazienti(){
+    const q = $("search").value.trim().toLowerCase();
+    const list = state.pazienti.slice().sort((a,b)=>a.nome.localeCompare(b.nome,"it")).filter(p => !q || p.nome.toLowerCase().includes(q));
+    const box = $("pzList");
+    if(!state.pazienti.length){
+      box.innerHTML = '<div class="card empty"><div class="big">🗂️</div><b>Nessun paziente ancora.</b><br>Premi «➕ Nuovo paziente» per aggiungere il primo.</div>';
+      return;
+    }
+    if(!list.length){ box.innerHTML = '<div class="card empty">Nessun paziente con questo nome.</div>'; return; }
+    box.innerHTML = '<div class="muted" style="margin:0 0 8px">👥 ' + state.pazienti.length + (state.pazienti.length===1?" paziente":" pazienti") + '</div>' + list.map(p => `
+      <div class="card">
+        <div class="row">
+          <div class="grow">
+            <div class="pz-name">👤 ${esc(p.nome)}</div>
+            <div class="muted">📱 ${esc(phonePretty(p.tel))}${p.note ? " · 🗒️ " + esc(p.note) : ""}</div>
+          </div>
+          <button class="btn-small" data-edit="${p.id}">✎ Modifica</button>
+          <button class="btn-small btn-danger" data-del="${p.id}">🗑️ Elimina</button>
+        </div>
+        <div class="chips">${(p.appuntamenti||[]).map(a => `<span class="chip ${a.tipo==="once"?"once":""}">${esc(apptLabel(a))}</span>`).join("") || '<span class="muted">Nessun appuntamento</span>'}</div>
+      </div>`).join("");
+  }
+  $("search").addEventListener("input", renderPazienti);
+  $("pzList").addEventListener("click", e => {
+    const ed = e.target.closest("[data-edit]"), del = e.target.closest("[data-del]");
+    if(ed) openEditor(ed.dataset.edit);
+    if(del){
+      if(!del.classList.contains("armed")){
+        del.classList.add("armed"); del.textContent = "⚠️ Tocca di nuovo per eliminare";
+        setTimeout(()=>{ if(del.isConnected){ del.classList.remove("armed"); del.textContent = "🗑️ Elimina"; } }, 4000);
+        return;
+      }
+      state.pazienti = state.pazienti.filter(p => p.id !== del.dataset.del);
+      save(); renderAll(); toast("Paziente eliminato");
+    }
+  });
+
+  function apptRowHTML(a){
+    const giorniOpt = [1,2,3,4,5,6,0].map(g => `<option value="${g}" ${Number(a.giorno)===g?"selected":""}>${GIORNI[g]}</option>`).join("");
+    return `<div class="appt-row">
+      <select class="a-tipo" aria-label="Tipo di appuntamento">
+        <option value="weekly" ${a.tipo!=="once"?"selected":""}>🔁 Ogni settimana</option>
+        <option value="once" ${a.tipo==="once"?"selected":""}>📌 Una volta sola</option>
+      </select>
+      <select class="a-giorno ${a.tipo==="once"?"hidden":""}" aria-label="Giorno della settimana">${giorniOpt}</select>
+      <input class="a-data ${a.tipo!=="once"?"hidden":""}" type="date" value="${esc(a.data||"")}" aria-label="Data">
+      <input class="a-ora" type="time" value="${esc(a.ora||"")}" aria-label="Ora">
+      <button class="btn-small btn-danger del" type="button" title="Togli questo appuntamento">✕ Togli</button>
+    </div>`;
+  }
+  function addApptRow(a){ $("apptList").insertAdjacentHTML("beforeend", apptRowHTML(a || {tipo:"weekly", giorno:1, ora:""})); }
+  $("apptList").addEventListener("change", e => {
+    if(e.target.classList.contains("a-tipo")){
+      const row = e.target.closest(".appt-row"), once = e.target.value === "once";
+      row.querySelector(".a-giorno").classList.toggle("hidden", once);
+      row.querySelector(".a-data").classList.toggle("hidden", !once);
+    }
+  });
+  $("apptList").addEventListener("click", e => { if(e.target.closest(".del")) e.target.closest(".appt-row").remove(); });
+  $("btnAddAppt").addEventListener("click", () => addApptRow());
+
+  function openEditor(id){
+    editingId = id || null;
+    const p = id ? state.pazienti.find(x => x.id === id) : null;
+    $("editorTitle").textContent = p ? "Modifica paziente" : "Nuovo paziente";
+    $("fNome").value = p ? p.nome : ""; $("fTel").value = p ? p.tel : ""; $("fNote").value = p ? (p.note||"") : "";
+    $("apptList").innerHTML = "";
+    (p && p.appuntamenti && p.appuntamenti.length ? p.appuntamenti : [null]).forEach(a => addApptRow(a));
+    $("editor").classList.remove("hidden");
+    $("editor").scrollIntoView({behavior:"smooth", block:"start"});
+    setTimeout(()=>$("fNome").focus(), 250);
+  }
+  function closeEditor(){ $("editor").classList.add("hidden"); editingId = null; }
+  $("btnAdd").addEventListener("click", () => openEditor(null));
+  $("btnCancel").addEventListener("click", closeEditor);
+  $("btnSave").addEventListener("click", () => {
+    const nome = $("fNome").value.trim(), tel = $("fTel").value.trim();
+    if(!nome){ toast("Scrivi il nome del paziente"); $("fNome").focus(); return; }
+    if(tel.replace(/\D/g,"").length < 6){ toast("Scrivi un numero di cellulare valido"); $("fTel").focus(); return; }
+    const appuntamenti = [...$("apptList").querySelectorAll(".appt-row")].map(r => {
+      const tipo = r.querySelector(".a-tipo").value, ora = r.querySelector(".a-ora").value;
+      return tipo === "once" ? {tipo, data: r.querySelector(".a-data").value, ora} : {tipo, giorno: Number(r.querySelector(".a-giorno").value), ora};
+    }).filter(a => a.tipo !== "once" || a.data);
+    const data = { nome, tel, note: $("fNote").value.trim(), appuntamenti };
+    if(editingId){ const i = state.pazienti.findIndex(p => p.id === editingId); if(i >= 0) state.pazienti[i] = {...state.pazienti[i], ...data}; }
+    else state.pazienti.push({ id: uid(), ...data });
+    save(); closeEditor(); renderAll(); toast("✅ Paziente salvato");
+  });
+
+  // ---------- AVVISA ----------
+  function periodoTesto(dal, al){
+    if(dal === al) return "il giorno " + dataLunga(parseYmd(dal));
+    const a = parseYmd(dal), b = parseYmd(al);
+    return "da " + dataLunga(a) + " a " + dataLunga(b);
+  }
+  function coinvolti(){
+    let dal = $("dDal").value, al = $("dAl").value || dal;
+    if(!dal) return [];
+    if(al < dal) al = dal;
+    const out = [];
+    const start = parseYmd(dal), end = parseYmd(al);
+    state.pazienti.forEach(p => {
+      const hits = [];
+      (p.appuntamenti||[]).forEach(a => {
+        if(a.tipo === "once"){ if(a.data && a.data >= dal && a.data <= al) hits.push({d: parseYmd(a.data), ora: a.ora}); }
+        else {
+          const d = new Date(start); let n = 0;
+          while(d <= end && n < 400){ if(d.getDay() === Number(a.giorno)) hits.push({d: new Date(d), ora: a.ora}); d.setDate(d.getDate()+1); n++; }
+        }
+      });
+      if(hits.length){
+        hits.sort((x,y) => x.d - y.d || String(x.ora).localeCompare(String(y.ora)));
+        out.push({ p, hits });
+      }
+    });
+    out.sort((x,y) => x.hits[0].d - y.hits[0].d || String(x.hits[0].ora).localeCompare(String(y.hits[0].ora)));
+    return out;
+  }
+  function appuntamentiTesto(hits){
+    const parts = hits.map(h => dataLunga(h.d) + (h.ora ? " alle " + h.ora : ""));
+    const elenco = parts.length === 1 ? parts[0] : parts.slice(0,-1).join(", ") + " e " + parts[parts.length-1];
+    return (hits.length === 1 ? "il suo appuntamento di " : "i suoi appuntamenti di ") + elenco;
+  }
+  function messaggioPer(item){
+    const dal = $("dDal").value, al = ($("dAl").value && $("dAl").value >= dal) ? $("dAl").value : dal;
+    let t = $("testo").value
+      .replaceAll("{nome}", item.p.nome)
+      .replaceAll("{appuntamenti}", appuntamentiTesto(item.hits))
+      .replaceAll("{periodo}", periodoTesto(dal, al));
+    // concordanza per il plurale nel modello ferie
+    if(item.hits.length > 1) t = t.replace("non si terrà", "non si terranno");
+    if(state.firma.trim()) t += "\n" + state.firma.trim();
+    return t;
+  }
+  function linkPer(item){
+    const msg = encodeURIComponent(messaggioPer(item));
+    const tel = phoneIntl(item.p.tel);
+    if(state.canale === "whatsapp") return "https://wa.me/" + tel.replace("+","") + "?text=" + msg;
+    return "sms:" + tel + (IS_IOS ? "&body=" : "?body=") + msg;
+  }
+  function renderCanale(){
+    const wa = state.canale === "whatsapp";
+    $("btnCanale").innerHTML = wa
+      ? "💬 <span><b>Invio con WhatsApp</b><small>Tocca qui per inviare invece con un normale SMS</small></span>"
+      : "✉️ <span><b>Invio con SMS</b><small>Tocca qui per inviare invece con WhatsApp</small></span>";
+  }
+  $("btnCanale").addEventListener("click", () => { state.canale = state.canale === "whatsapp" ? "sms" : "whatsapp"; save(); renderAvvisa(); });
+
+  function renderAvvisa(){
+    renderCanale();
+    const items = coinvolti();
+    const box = $("whoList");
+    if(!$("dDal").value){ box.innerHTML = '<div class="muted">Scegli prima le date al passo 1.</div>'; $("sendBox").classList.add("hidden"); return; }
+    if(!items.length){ box.innerHTML = '<div class="empty"><div class="big">🎉</div>Nessun paziente ha appuntamenti in queste date.</div>'; $("sendBox").classList.add("hidden"); return; }
+    box.innerHTML = '<div class="muted" style="margin-bottom:4px">Togli la spunta a chi non vuoi avvisare.</div>' + items.map(it => `
+      <div class="who">
+        <input type="checkbox" data-sel="${it.p.id}" ${unselected.has(it.p.id)?"":"checked"} aria-label="Avvisa ${esc(it.p.nome)}">
+        <div class="grow">
+          <div><b>👤 ${esc(it.p.nome)}</b> ${sentIds.has(it.p.id) ? '<span class="sent">✅ avvisato</span>' : ""}</div>
+          <div class="muted">📱 ${esc(phonePretty(it.p.tel))}</div>
+          <div class="chips">${it.hits.map(h => `<span class="chip">📅 ${esc(dataLunga(h.d))}${h.ora ? " · 🕐 " + esc(h.ora) : ""}</span>`).join("")}</div>
+        </div>
+        <a class="btn btn-small" data-one="${it.p.id}" href="${esc(linkPer(it))}" target="_blank" rel="noopener" title="Invia solo a questo paziente">${state.canale==="whatsapp"?"💬":"✉️"} Invia</a>
+      </div>`).join("");
+    renderSend(items);
+  }
+  function queue(items){ return items.filter(it => !unselected.has(it.p.id)); }
+  function renderSend(items){
+    items = items || coinvolti();
+    const q = queue(items), next = q.find(it => !sentIds.has(it.p.id));
+    const done = q.filter(it => sentIds.has(it.p.id)).length;
+    $("sendBox").classList.toggle("hidden", !q.length);
+    if(!q.length) return;
+    const btn = $("btnSend");
+    if(!next){
+      btn.removeAttribute("href"); btn.className = "btn btn-big btn-primary";
+      btn.textContent = "✅ Tutti avvisati (" + done + " di " + q.length + ") — tocca per ricominciare";
+      btn.dataset.mode = "reset";
+      $("sendHelp").textContent = "Hai aperto il messaggio per tutti i pazienti selezionati.";
+      $("curPreview").classList.add("hidden"); $("btnCopy").parentElement.parentElement.classList.add("hidden");
+      return;
+    }
+    btn.className = "btn btn-big btn-wa"; btn.dataset.mode = "send"; btn.dataset.id = next.p.id;
+    btn.href = linkPer(next);
+    btn.textContent = (state.canale==="whatsapp"?"💬 ":"✉️ ") + "Invia a " + next.p.nome + "  (" + (done+1) + " di " + q.length + ")";
+    $("sendHelp").textContent = "Si apre " + (state.canale==="whatsapp" ? "WhatsApp" : "l'app degli SMS") + " con il messaggio già scritto: premi «Invia» lì, poi torna qui e tocca di nuovo per il paziente successivo.";
+    $("curPreview").classList.remove("hidden"); $("btnCopy").parentElement.parentElement.classList.remove("hidden");
+    $("curPreview").textContent = messaggioPer(next);
+    $("curNumber").textContent = "📱 " + phonePretty(next.p.tel);
+  }
+  $("btnSend").addEventListener("click", e => {
+    const btn = $("btnSend");
+    if(btn.dataset.mode === "reset"){ e.preventDefault(); sentIds.clear(); renderAvvisa(); return; }
+    const id = btn.dataset.id;
+    setTimeout(() => { sentIds.add(id); renderAvvisa(); }, 300);
+  });
+  $("whoList").addEventListener("click", e => {
+    const one = e.target.closest("[data-one]");
+    if(one){ const id = one.dataset.one; setTimeout(() => { sentIds.add(id); renderAvvisa(); }, 300); }
+  });
+  $("whoList").addEventListener("change", e => {
+    const cb = e.target.closest("[data-sel]"); if(!cb) return;
+    if(cb.checked) unselected.delete(cb.dataset.sel); else unselected.add(cb.dataset.sel);
+    renderSend();
+  });
+  $("btnCopy").addEventListener("click", async () => {
+    try{ await navigator.clipboard.writeText($("curPreview").textContent); toast("📋 Messaggio copiato"); }
+    catch(e){ toast("Non riesco a copiare: seleziona il testo e copialo a mano"); }
+  });
+
+  // testo e motivo
+  function loadTesto(){ const m = $("motivo").value; $("testo").value = state.testi[m] || MODELLI[m]; }
+  $("motivo").addEventListener("change", () => { loadTesto(); renderAvvisa(); });
+  let testoTimer = null;
+  $("testo").addEventListener("input", () => {
+    state.testi[$("motivo").value] = $("testo").value;
+    clearTimeout(testoTimer); testoTimer = setTimeout(() => { save(); renderAvvisa(); }, 500);
+  });
+  document.querySelectorAll(".ph").forEach(b => b.addEventListener("click", () => {
+    const ta = $("testo"), s = ta.selectionStart ?? ta.value.length, en = ta.selectionEnd ?? s;
+    ta.value = ta.value.slice(0,s) + b.dataset.ph + ta.value.slice(en);
+    ta.focus(); ta.selectionStart = ta.selectionEnd = s + b.dataset.ph.length;
+    ta.dispatchEvent(new Event("input"));
+  }));
+  let firmaTimer = null;
+  $("firma").addEventListener("input", () => { state.firma = $("firma").value; clearTimeout(firmaTimer); firmaTimer = setTimeout(() => { save(); renderAvvisa(); }, 500); });
+  ["dDal","dAl"].forEach(id => $(id).addEventListener("change", () => {
+    if(id === "dDal" && (!$("dAl").value || $("dAl").value < $("dDal").value)) $("dAl").value = $("dDal").value;
+    sentIds.clear(); unselected.clear(); renderAvvisa();
+  }));
+
+  function renderAll(){
+    renderPazienti(); renderBackup();
+    if($("firma") !== document.activeElement) $("firma").value = state.firma;
+    if($("testo") !== document.activeElement) loadTesto();
+    if(!$("tab-avvisa").classList.contains("hidden")) renderAvvisa(); else renderCanale();
+  }
+
+  // ---------- avvio ----------
+  const local = readLocal();
+  if(local) state = normalize(local);
+  const oggi = ymd(new Date()); $("dDal").value = oggi; $("dAl").value = oggi;
+  renderAll();
+  setStatus(local ? "📱 Salvato su questo iPhone" : "📱 I dati restano solo su questo iPhone");
+  const standalone = window.navigator.standalone === true || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
+  if(!standalone && IS_IOS) $("installBox").classList.remove("hidden");
+  try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
+  if("serviceWorker" in navigator){ window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js").catch(()=>{})); }
+})();
+</script>
+</body>
+</html>
