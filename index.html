@@ -69,6 +69,15 @@
   .step .n{background:var(--accent);color:#fff;border-radius:50%;width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;font-size:.9rem;flex:none}
   .fallback{margin-top:10px;font-size:.9rem}
   .hidden{display:none!important}
+  .bc{margin-top:16px;border:1px solid var(--line);border-radius:var(--radius);background:#fff}
+  .bc>summary{cursor:pointer;padding:12px 14px;font-weight:700;list-style:none;display:flex;gap:8px;align-items:flex-start}
+  .bc>summary::-webkit-details-marker{display:none}
+  .bc>summary small{display:block;font-weight:400;color:var(--muted)}
+  .bc[open]>summary{border-bottom:1px solid var(--line)}
+  .bc .bcin{padding:12px 14px}
+  .bc ol{margin:6px 0 0;padding-left:22px}.bc li{margin:6px 0}
+  .bc .warn{background:var(--warn-soft);color:#7a2e1d;border-radius:10px;padding:8px 10px;font-size:.9rem;margin:8px 0}
+  .bc .names{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
   .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:.92rem;opacity:0;transition:opacity .2s;pointer-events:none}
   .toast.show{opacity:1}
 </style>
@@ -105,6 +114,13 @@
 
     <div id="editor" class="card hidden">
       <div class="step"><span class="n">✎</span><span id="editorTitle">Nuovo paziente</span></div>
+      <label for="fTitolo">🎩 Appellativo</label>
+      <select id="fTitolo">
+        <option value="">— nessuno —</option>
+        <option>Sig.</option><option>Sig.ra</option><option>Dott.</option><option>Dott.ssa</option>
+        <option>Ing.</option><option>Rag.</option><option>Prof.</option><option>Prof.ssa</option><option>Avv.</option>
+      </select>
+      <div class="muted">Compare davanti al nome, anche nei messaggi: «Gentile Sig.ra Rossi».</div>
       <label for="fNome">👤 Nome e cognome</label>
       <input id="fNome" autocomplete="off" placeholder="Es. Maria Rossi">
       <label for="fTel">📱 Cellulare</label>
@@ -169,7 +185,7 @@
       <textarea id="testo"></textarea>
       <div class="muted" style="margin:6px 0">Le parole tra parentesi graffe vengono sostituite in automatico per ogni paziente. Tocca una parola per inserirla nel testo:</div>
       <div class="chips">
-        <button class="ph" data-ph="{nome}" title="Il nome del paziente">{nome} = nome</button>
+        <button class="ph" data-ph="{nome}" title="Appellativo e nome del paziente">{nome} = appellativo e nome</button>
         <button class="ph" data-ph="{appuntamenti}" title="Gli appuntamenti annullati, con giorno e ora">{appuntamenti} = giorno e ora</button>
         <button class="ph" data-ph="{periodo}" title="Le date di assenza">{periodo} = date di assenza</button>
       </div>
@@ -193,6 +209,28 @@
           </div>
         </div>
       </div>
+      <details class="bc hidden" id="bcBox">
+        <summary>📢 <span>Oppure: lo stesso messaggio a tutti, con una lista broadcast di WhatsApp<small>Tocca qui per aprire la guida.</small></span></summary>
+        <div class="bcin">
+          <div class="muted">Con una <b>lista broadcast</b> mandi un solo messaggio a più persone. Ognuno lo riceve come messaggio privato e non vede gli altri. Il messaggio però è uguale per tutti: non può contenere il nome o l'orario di ciascuno.</div>
+          <div class="warn">⚠️ Il messaggio arriva solo ai pazienti che hanno salvato il tuo numero nella loro rubrica. Gli altri vanno avvisati uno per uno, con il pulsante verde qui sopra.</div>
+          <label for="bcTesto">✉️ Messaggio uguale per tutti (puoi modificarlo)</label>
+          <textarea id="bcTesto" style="min-height:110px"></textarea>
+          <div class="muted" style="margin-top:4px">{periodo} viene sostituito con le date di assenza. La firma viene aggiunta in fondo.</div>
+          <label>👀 Ecco come arriva</label>
+          <div class="preview" id="bcPreview" style="margin-top:0"></div>
+          <label>👥 Chi mettere nella lista (<span id="bcCount">0</span>)</label>
+          <div class="names" id="bcNames"></div>
+          <label>🧭 Come si fa</label>
+          <ol>
+            <li>Tocca <button class="btn-small" id="bcCopy" type="button">📋 Copia il messaggio</button></li>
+            <li>Apri <b>WhatsApp</b> 💬 e vai nella scheda <b>«Chat»</b>.<br><span class="muted">Su iPhone tocca <b>«Liste broadcast»</b> in alto (se non la vedi, tocca ⋯). Su Android tocca i tre puntini ⋮ in alto e poi <b>«Nuovo broadcast»</b>.</span></li>
+            <li>Tocca <b>«Nuova lista»</b>, scegli i pazienti dell'elenco qui sopra e tocca <b>«Crea»</b>.<br><span class="muted">I pazienti devono essere salvati anche nella rubrica del telefono, altrimenti WhatsApp non li mostra.</span></li>
+            <li>Nella lista appena creata tieni premuto il campo del messaggio, tocca <b>«Incolla»</b> e poi <b>invia</b> ➤.</li>
+          </ol>
+          <div class="muted" style="margin-top:8px">💡 La lista resta salvata in WhatsApp: la prossima volta basta riaprirla e incollare il nuovo messaggio. Puoi crearne una per ogni giorno della settimana, per esempio «Pazienti lunedì».</div>
+        </div>
+      </details>
     </div>
   </section>
 </main>
@@ -203,6 +241,13 @@
   // ---------- stato ----------
   const GIORNI = ["domenica","lunedì","martedì","mercoledì","giovedì","venerdì","sabato"];
   const MESI = ["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"];
+  const MODELLI_BC = {
+    assenza: "Gentile paziente, per un imprevisto {periodo} non potrò ricevere: gli appuntamenti previsti sono annullati. La ricontatterò al più presto per fissarne un altro. Mi scuso per il disagio.",
+    ferie: "Gentile paziente, lo studio resterà chiuso per ferie {periodo}: gli appuntamenti previsti in quei giorni non si terranno. La ricontatterò alla riapertura per confermare il prossimo incontro. Grazie per la comprensione.",
+    spostamento: "Gentile paziente, devo spostare gli appuntamenti previsti {periodo}. La ricontatterò per concordare il nuovo orario. Grazie.",
+    libero: "Gentile paziente, "
+  };
+  const nomeCompleto = p => ((p.titolo ? p.titolo + " " : "") + (p.nome || "")).trim();
   const MODELLI = {
     assenza: "Gentile {nome}, per un imprevisto devo annullare {appuntamenti}. La ricontatterò al più presto per fissare un nuovo appuntamento. Mi scuso per il disagio.",
     ferie: "Gentile {nome}, lo studio resterà chiuso per ferie {periodo}, quindi {appuntamenti} non si terrà. La ricontatterò alla riapertura per confermare il prossimo incontro. Grazie per la comprensione.",
@@ -211,7 +256,7 @@
   };
   const LS_KEY = "agendaAvvisi.v1";
   const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  let state = { pazienti: [], firma: "", canale: "whatsapp", testi: {}, ultimoBackup: "" };
+  let state = { pazienti: [], firma: "", canale: "whatsapp", testi: {}, testiBc: {}, ultimoBackup: "" };
   let editingId = null, sentIds = new Set(), unselected = new Set();
 
   const $ = id => document.getElementById(id);
@@ -225,7 +270,7 @@
   function readLocal(){ try{ const r = localStorage.getItem(LS_KEY); return r ? JSON.parse(r) : null; }catch(e){ return null; } }
   function writeLocal(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); return true; }catch(e){ return false; } }
   function normalize(s){
-    return { pazienti: Array.isArray(s?.pazienti) ? s.pazienti : [], firma: s?.firma || "", canale: s?.canale === "sms" ? "sms" : "whatsapp", testi: (s && typeof s.testi === "object" && s.testi) || {}, ultimoBackup: s?.ultimoBackup || "" };
+    return { pazienti: Array.isArray(s?.pazienti) ? s.pazienti : [], firma: s?.firma || "", canale: s?.canale === "sms" ? "sms" : "whatsapp", testi: (s && typeof s.testi === "object" && s.testi) || {}, testiBc: (s && typeof s.testiBc === "object" && s.testiBc) || {}, ultimoBackup: s?.ultimoBackup || "" };
   }
   function save(){
     if(writeLocal()) setStatus("📱 Salvato su questo iPhone");
@@ -314,7 +359,7 @@
       <div class="card">
         <div class="row">
           <div class="grow">
-            <div class="pz-name">👤 ${esc(p.nome)}</div>
+            <div class="pz-name">👤 ${esc(nomeCompleto(p))}</div>
             <div class="muted">📱 ${esc(phonePretty(p.tel))}${p.note ? " · 🗒️ " + esc(p.note) : ""}</div>
           </div>
           <button class="btn-small" data-edit="${p.id}">✎ Modifica</button>
@@ -366,7 +411,7 @@
     editingId = id || null;
     const p = id ? state.pazienti.find(x => x.id === id) : null;
     $("editorTitle").textContent = p ? "Modifica paziente" : "Nuovo paziente";
-    $("fNome").value = p ? p.nome : ""; $("fTel").value = p ? p.tel : ""; $("fNote").value = p ? (p.note||"") : "";
+    $("fTitolo").value = p ? (p.titolo||"") : ""; $("fNome").value = p ? p.nome : ""; $("fTel").value = p ? p.tel : ""; $("fNote").value = p ? (p.note||"") : "";
     $("apptList").innerHTML = "";
     (p && p.appuntamenti && p.appuntamenti.length ? p.appuntamenti : [null]).forEach(a => addApptRow(a));
     $("editor").classList.remove("hidden");
@@ -384,7 +429,7 @@
       const tipo = r.querySelector(".a-tipo").value, ora = r.querySelector(".a-ora").value;
       return tipo === "once" ? {tipo, data: r.querySelector(".a-data").value, ora} : {tipo, giorno: Number(r.querySelector(".a-giorno").value), ora};
     }).filter(a => a.tipo !== "once" || a.data);
-    const data = { nome, tel, note: $("fNote").value.trim(), appuntamenti };
+    const data = { titolo: $("fTitolo").value, nome, tel, note: $("fNote").value.trim(), appuntamenti };
     if(editingId){ const i = state.pazienti.findIndex(p => p.id === editingId); if(i >= 0) state.pazienti[i] = {...state.pazienti[i], ...data}; }
     else state.pazienti.push({ id: uid(), ...data });
     save(); closeEditor(); renderAll(); toast("✅ Paziente salvato");
@@ -427,7 +472,7 @@
   function messaggioPer(item){
     const dal = $("dDal").value, al = ($("dAl").value && $("dAl").value >= dal) ? $("dAl").value : dal;
     let t = $("testo").value
-      .replaceAll("{nome}", item.p.nome)
+      .replaceAll("{nome}", nomeCompleto(item.p))
       .replaceAll("{appuntamenti}", appuntamentiTesto(item.hits))
       .replaceAll("{periodo}", periodoTesto(dal, al));
     // concordanza per il plurale nel modello ferie
@@ -453,13 +498,13 @@
     renderCanale();
     const items = coinvolti();
     const box = $("whoList");
-    if(!$("dDal").value){ box.innerHTML = '<div class="muted">Scegli prima le date al passo 1.</div>'; $("sendBox").classList.add("hidden"); return; }
-    if(!items.length){ box.innerHTML = '<div class="empty"><div class="big">🎉</div>Nessun paziente ha appuntamenti in queste date.</div>'; $("sendBox").classList.add("hidden"); return; }
+    if(!$("dDal").value){ box.innerHTML = '<div class="muted">Scegli prima le date al passo 1.</div>'; $("sendBox").classList.add("hidden"); $("bcBox").classList.add("hidden"); return; }
+    if(!items.length){ box.innerHTML = '<div class="empty"><div class="big">🎉</div>Nessun paziente ha appuntamenti in queste date.</div>'; $("sendBox").classList.add("hidden"); $("bcBox").classList.add("hidden"); return; }
     box.innerHTML = '<div class="muted" style="margin-bottom:4px">Togli la spunta a chi non vuoi avvisare.</div>' + items.map(it => `
       <div class="who">
-        <input type="checkbox" data-sel="${it.p.id}" ${unselected.has(it.p.id)?"":"checked"} aria-label="Avvisa ${esc(it.p.nome)}">
+        <input type="checkbox" data-sel="${it.p.id}" ${unselected.has(it.p.id)?"":"checked"} aria-label="Avvisa ${esc(nomeCompleto(it.p))}">
         <div class="grow">
-          <div><b>👤 ${esc(it.p.nome)}</b> ${sentIds.has(it.p.id) ? '<span class="sent">✅ avvisato</span>' : ""}</div>
+          <div><b>👤 ${esc(nomeCompleto(it.p))}</b> ${sentIds.has(it.p.id) ? '<span class="sent">✅ avvisato</span>' : ""}</div>
           <div class="muted">📱 ${esc(phonePretty(it.p.tel))}</div>
           <div class="chips">${it.hits.map(h => `<span class="chip">📅 ${esc(dataLunga(h.d))}${h.ora ? " · 🕐 " + esc(h.ora) : ""}</span>`).join("")}</div>
         </div>
@@ -467,10 +512,26 @@
       </div>`).join("");
     renderSend(items);
   }
+  function periodoAttuale(){ const dal = $("dDal").value, al = ($("dAl").value && $("dAl").value >= dal) ? $("dAl").value : dal; return dal ? periodoTesto(dal, al) : ""; }
+  function messaggioBc(){
+    let t = $("bcTesto").value.replaceAll("{periodo}", periodoAttuale()).replaceAll("{nome}", "paziente").replaceAll("{appuntamenti}", "gli appuntamenti previsti");
+    if(state.firma.trim()) t += "\n" + state.firma.trim();
+    return t;
+  }
+  function loadBc(){ const m = $("motivo").value; $("bcTesto").value = state.testiBc[m] || MODELLI_BC[m]; }
+  function renderBc(q){
+    const box = $("bcBox");
+    box.classList.toggle("hidden", q.length < 2);
+    if(q.length < 2) return;
+    $("bcCount").textContent = q.length;
+    $("bcNames").innerHTML = q.map(it => `<span class="chip">👤 ${esc(nomeCompleto(it.p))} · ${esc(phonePretty(it.p.tel))}</span>`).join("");
+    $("bcPreview").textContent = messaggioBc();
+  }
   function queue(items){ return items.filter(it => !unselected.has(it.p.id)); }
   function renderSend(items){
     items = items || coinvolti();
     const q = queue(items), next = q.find(it => !sentIds.has(it.p.id));
+    renderBc(q);
     const done = q.filter(it => sentIds.has(it.p.id)).length;
     $("sendBox").classList.toggle("hidden", !q.length);
     if(!q.length) return;
@@ -485,7 +546,7 @@
     }
     btn.className = "btn btn-big btn-wa"; btn.dataset.mode = "send"; btn.dataset.id = next.p.id;
     btn.href = linkPer(next);
-    btn.textContent = (state.canale==="whatsapp"?"💬 ":"✉️ ") + "Invia a " + next.p.nome + "  (" + (done+1) + " di " + q.length + ")";
+    btn.textContent = (state.canale==="whatsapp"?"💬 ":"✉️ ") + "Invia a " + nomeCompleto(next.p) + "  (" + (done+1) + " di " + q.length + ")";
     $("sendHelp").textContent = "Si apre " + (state.canale==="whatsapp" ? "WhatsApp" : "l'app degli SMS") + " con il messaggio già scritto: premi «Invia» lì, poi torna qui e tocca di nuovo per il paziente successivo.";
     $("curPreview").classList.remove("hidden"); $("btnCopy").parentElement.parentElement.classList.remove("hidden");
     $("curPreview").textContent = messaggioPer(next);
@@ -512,7 +573,17 @@
   });
 
   // testo e motivo
-  function loadTesto(){ const m = $("motivo").value; $("testo").value = state.testi[m] || MODELLI[m]; }
+  function loadTesto(){ const m = $("motivo").value; $("testo").value = state.testi[m] || MODELLI[m]; loadBc(); }
+  let bcTimer = null;
+  $("bcTesto").addEventListener("input", () => {
+    state.testiBc[$("motivo").value] = $("bcTesto").value;
+    $("bcPreview").textContent = messaggioBc();
+    clearTimeout(bcTimer); bcTimer = setTimeout(save, 600);
+  });
+  $("bcCopy").addEventListener("click", async () => {
+    try{ await navigator.clipboard.writeText(messaggioBc()); toast("📋 Messaggio copiato: ora aprilo in WhatsApp"); }
+    catch(e){ toast("Non riesco a copiare: seleziona il testo dell'anteprima e copialo a mano"); }
+  });
   $("motivo").addEventListener("change", () => { loadTesto(); renderAvvisa(); });
   let testoTimer = null;
   $("testo").addEventListener("input", () => {
@@ -535,7 +606,7 @@
   function renderAll(){
     renderPazienti(); renderBackup();
     if($("firma") !== document.activeElement) $("firma").value = state.firma;
-    if($("testo") !== document.activeElement) loadTesto();
+    if($("testo") !== document.activeElement && $("bcTesto") !== document.activeElement) loadTesto();
     if(!$("tab-avvisa").classList.contains("hidden")) renderAvvisa(); else renderCanale();
   }
 
